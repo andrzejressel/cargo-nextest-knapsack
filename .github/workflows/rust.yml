@@ -10,6 +10,13 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: "full"
 
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
 
@@ -22,8 +29,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - uses: extractions/setup-just@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: cargo-bins/cargo-binstall@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Install requirements
+      run: just install-requirements
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - uses: Swatinem/rust-cache@v2
     - name: Build
-      run: cargo build --verbose
+      run: cargo build
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo nextest run --workspace

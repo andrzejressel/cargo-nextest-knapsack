@@ -1,5 +1,11 @@
 set windows-shell := ["pwsh.exe", "-c"]
 
+# renovate: datasource=crate depName=cargo-nextest packageName=cargo-nextest
+NEXTEST_VERSION := "0.9.72"
+
+install-requirements:
+    cargo binstall --no-confirm cargo-nextest@{{NEXTEST_VERSION}}
+
 [windows]
 test KNAPSACK_API_TOKEN:
     #!pwsh
