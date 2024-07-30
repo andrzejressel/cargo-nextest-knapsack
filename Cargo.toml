@@ -2,6 +2,7 @@
 name = "cargo-nextest-knapsack"
 version = "0.0.0-DEV"
 edition = "2021"
+repository = "https://github.com/andrzejressel/cargo-nextest-knapsack"
 
 [dependencies]
 nextest-metadata = "0.11.0"

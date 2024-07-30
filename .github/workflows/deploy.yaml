@@ -1,0 +1,100 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: "full"
+
+permissions:
+  contents: write
+
+jobs:
+
+  deploy_rust_registry:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: extractions/setup-just@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to registry
+        run: just publish
+        env:
+          CARGO_REGISTRIES_CLOUDSMITH_TOKEN: ${{ secrets.CLOUDSMITH_API_KEY }}
+
+  deploy_binaries:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - rust-target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - rust-target: x86_64-apple-darwin
+            os: macos-latest
+          - rust-target: aarch64-apple-darwin
+            os: macos-latest
+          - rust-target: x86_64-pc-windows-msvc
+            os: windows-latest
+
+    steps:
+      - run: git config --system core.longpaths true
+        if: runner.os == 'Windows'
+      - name: Write release version (non-Windows)
+        if: matrix.os != 'windows-latest'
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "Version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - name: Write release version (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          $VERSION = $env:GITHUB_REF_NAME -replace "^v"
+          echo "Version: $VERSION"
+          echo "VERSION=$VERSION" >> $env:GITHUB_ENV
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: extractions/setup-just@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: cargo-bins/cargo-binstall@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install requirements
+        run: just install-requirements
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: build
+          save-if: false
+
+      - name: Add target
+        run: rustup target add ${{ matrix.rust-target }}
+      - name: Build runner
+        run: cargo build --target ${{ matrix.rust-target }}
+
+      - run: mv ./target/${{ matrix.rust-target }}/debug/cargo-nextest-knapsack.exe ./target/${{ matrix.rust-target }}/debug/cargo-nextest-knapsack-${{ matrix.rust-target }}
+        if: matrix.os == 'windows-latest'
+      - run: mv ./target/${{ matrix.rust-target }}/debug/cargo-nextest-knapsack ./target/${{ matrix.rust-target }}/debug/cargo-nextest-knapsack-${{ matrix.rust-target }}
+        if: matrix.os != 'windows-latest'
+
+      - name: Release
+        uses: softprops/action-gh-release@v2.0.8
+        with:
+          name: ${{ env.VERSION }}
+          tag_name: ${{ env.GITHUB_REF_NAME }}
+          fail_on_unmatched_files: true
+          prerelease: true
+          body: ""
+          files: |
+            ./target/${{ matrix.rust-target }}/debug/cargo-nextest-knapsack-${{ matrix.rust-target }}

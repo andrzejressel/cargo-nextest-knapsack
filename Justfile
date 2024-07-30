@@ -2,9 +2,12 @@ set windows-shell := ["pwsh.exe", "-c"]
 
 # renovate: datasource=crate depName=cargo-nextest packageName=cargo-nextest
 NEXTEST_VERSION := "0.9.72"
+# renovate: datasource=crate depName=sd packageName=sd
+SD_VERSION := "1.0.0"
 
 install-requirements:
     cargo binstall --no-confirm cargo-nextest@{{NEXTEST_VERSION}}
+    cargo binstall --no-confirm sd@{{SD_VERSION}}
 
 [windows]
 test KNAPSACK_API_TOKEN:
@@ -22,3 +25,9 @@ test KNAPSACK_API_TOKEN:
     $job2 = target\debug\cargo-nextest-knapsack-2.exe &
     Receive-Job $job1 -Wait
     Receive-Job $job2 -Wait
+
+publish:
+    cargo publish --all-features
+
+update-version NEW_VERSION:
+    sd "0.0.0-DEV" "{{NEW_VERSION}}" "Cargo.toml"
