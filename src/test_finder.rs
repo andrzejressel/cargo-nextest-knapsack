@@ -66,6 +66,11 @@ mod tests {
                 Test {
                     package_name: "project".into(),
                     binary_name: "project".into(),
+                    test_name: "dir::file::tests::test_in_subdirectory_2".into()
+                },
+                Test {
+                    package_name: "project".into(),
+                    binary_name: "project".into(),
                     test_name: "tests::root_inline_test".into()
                 },
                 Test {

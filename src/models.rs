@@ -25,7 +25,7 @@ impl Test {
     pub(crate) fn to_nextest_filter(&self) -> Vec<String> {
         vec![
             "-E".into(),
-            format!("package({}) & test({})", self.package_name, self.test_name),
+            format!("package({}) & test(={})", self.package_name, self.test_name),
         ]
     }
 
