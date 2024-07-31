@@ -302,7 +302,7 @@ impl KnapsackClient {
         Ok(files)
     }
 
-    pub(crate) fn update_test_results(&self, test_results: &Vec<TestResult>) -> Result<()> {
+    pub(crate) fn upload_test_results(&self, test_results: &Vec<TestResult>) -> Result<()> {
         let node_total = self
             .ci_provider_wrapper
             .get_ci_node_total()

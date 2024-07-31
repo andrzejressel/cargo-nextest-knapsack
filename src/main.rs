@@ -40,7 +40,7 @@ fn main() -> anyhow::Result<()> {
         results.append(&mut local_results);
     }
 
-    client.update_test_results(&results)?;
+    client.upload_test_results(&results)?;
 
     Ok(())
 }
