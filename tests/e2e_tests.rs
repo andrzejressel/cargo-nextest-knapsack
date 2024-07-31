@@ -1,4 +1,2 @@
 #[test]
-fn e2e_tests() {
-
-}
+fn e2e_tests() {}
