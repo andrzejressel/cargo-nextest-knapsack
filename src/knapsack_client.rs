@@ -1,22 +1,20 @@
 use crate::ci_providers::ci_provider_base::CiProvider;
 use crate::ci_providers::ci_provider_wrapper::CiProviderWrapper;
+use crate::models::{Test, TestResult};
 use crate::test_finder::TestFinder;
 use anyhow::{anyhow, Context, Result};
-use serde_json::{json, Value};
 use serde::Deserialize;
-use crate::models::{Test, TestResult};
+use serde_json::{json, Value};
 
 pub(crate) struct KnapsackClient {
     initialized: bool,
     endpoint: String,
     api_key: String,
     test_finder: Box<dyn TestFinder>,
-    ci_provider_wrapper: CiProviderWrapper
+    ci_provider_wrapper: CiProviderWrapper,
 }
 
-impl KnapsackClient {
-
-}
+impl KnapsackClient {}
 
 #[derive(Deserialize)]
 struct KnapsackResponseWithFiles {
@@ -29,13 +27,18 @@ struct KnapsackTestFile {
 }
 
 impl KnapsackClient {
-    pub(crate) fn new(endpoint: String, api_key: String, test_finder: Box<dyn TestFinder>, ci_provider_wrapper: CiProviderWrapper) -> Self {
+    pub(crate) fn new(
+        endpoint: String,
+        api_key: String,
+        test_finder: Box<dyn TestFinder>,
+        ci_provider_wrapper: CiProviderWrapper,
+    ) -> Self {
         KnapsackClient {
             initialized: false,
             api_key,
             endpoint,
             test_finder,
-            ci_provider_wrapper
+            ci_provider_wrapper,
         }
     }
 
@@ -53,19 +56,24 @@ impl KnapsackClient {
     }
 
     fn initialize_queue_1(&self) -> Result<Option<Vec<Test>>> {
-        let node_total = self.ci_provider_wrapper
+        let node_total = self
+            .ci_provider_wrapper
             .get_ci_node_total()
             .context("Failed to get node total")?;
 
-        let node_index = self.ci_provider_wrapper
+        let node_index = self
+            .ci_provider_wrapper
             .get_ci_node_index()
             .context("Failed to get node index")?;
 
-        let branch = self.ci_provider_wrapper
+        let branch = self
+            .ci_provider_wrapper
             .get_branch()
             .context("Failed to get branch")?;
 
-        let commit_hash = self.ci_provider_wrapper.get_commit_hash()
+        let commit_hash = self
+            .ci_provider_wrapper
+            .get_commit_hash()
             .context("Failed to get commit hash")?;
 
         let json = json!({
@@ -105,7 +113,12 @@ impl KnapsackClient {
 
         let output = result.json::<Value>().context("Failed to parse response")?;
 
-        if output.get("code").unwrap_or(&Value::Null).as_str().is_some_and(|s| s == "ATTEMPT_CONNECT_TO_QUEUE_FAILED") {
+        if output
+            .get("code")
+            .unwrap_or(&Value::Null)
+            .as_str()
+            .is_some_and(|s| s == "ATTEMPT_CONNECT_TO_QUEUE_FAILED")
+        {
             return Ok(None);
         } else {
             let response: KnapsackResponseWithFiles = serde_json::from_value(output)
@@ -114,8 +127,10 @@ impl KnapsackClient {
             let mut files = vec![];
 
             for file in response.test_files {
-                files.push(Test::from_knapsack_file(&file.path)
-                    .with_context(|| format!("Failed to parse test file: {}", &file.path))?);
+                files.push(
+                    Test::from_knapsack_file(&file.path)
+                        .with_context(|| format!("Failed to parse test file: {}", &file.path))?,
+                );
             }
 
             Ok(Some(files))
@@ -123,30 +138,40 @@ impl KnapsackClient {
     }
 
     fn initialize_queue_2(&self) -> Result<Vec<Test>> {
-        let node_total = self.ci_provider_wrapper
+        let node_total = self
+            .ci_provider_wrapper
             .get_ci_node_total()
             .context("Failed to get node total")?;
 
-        let node_index = self.ci_provider_wrapper
+        let node_index = self
+            .ci_provider_wrapper
             .get_ci_node_index()
             .context("Failed to get node index")?;
 
-        let branch = self.ci_provider_wrapper
+        let branch = self
+            .ci_provider_wrapper
             .get_branch()
             .context("Failed to get branch")?;
 
-        let tests = self.test_finder.find_tests_in_directory()
+        let tests = self
+            .test_finder
+            .find_tests_in_directory()
             .context("Failed to find tests")?;
 
-        let commit_hash = self.ci_provider_wrapper.get_commit_hash()
+        let commit_hash = self
+            .ci_provider_wrapper
+            .get_commit_hash()
             .context("Failed to get commit hash")?;
 
         let tests_value = serde_json::Value::Array(
-            tests.iter().map(|test| {
-                json!({
-                    "path": test.to_knapsack_file()
+            tests
+                .iter()
+                .map(|test| {
+                    json!({
+                        "path": test.to_knapsack_file()
+                    })
                 })
-            }).collect()
+                .collect(),
         );
 
         // let branch = ciProvider.get_branch().ok_or_else(|| anyhow!("No branch provided"))?;
@@ -187,32 +212,41 @@ impl KnapsackClient {
             anyhow::bail!("Failed to initialize queue: [{status}] [{output}]")
         }
 
-        let response = result.json::<KnapsackResponseWithFiles>().context("Failed to parse response")?;
+        let response = result
+            .json::<KnapsackResponseWithFiles>()
+            .context("Failed to parse response")?;
 
         let mut files = vec![];
 
         for file in response.test_files {
-            files.push(Test::from_knapsack_file(&file.path)
-                .with_context(|| format!("Failed to parse test file: {}", &file.path))?);
+            files.push(
+                Test::from_knapsack_file(&file.path)
+                    .with_context(|| format!("Failed to parse test file: {}", &file.path))?,
+            );
         }
 
         Ok(files)
     }
 
     fn initialize_queue_3(&self) -> Result<Vec<Test>> {
-        let node_total = self.ci_provider_wrapper
+        let node_total = self
+            .ci_provider_wrapper
             .get_ci_node_total()
             .context("Failed to get node total")?;
 
-        let node_index = self.ci_provider_wrapper
+        let node_index = self
+            .ci_provider_wrapper
             .get_ci_node_index()
             .context("Failed to get node index")?;
 
-        let branch = self.ci_provider_wrapper
+        let branch = self
+            .ci_provider_wrapper
             .get_branch()
             .context("Failed to get branch")?;
 
-        let commit_hash = self.ci_provider_wrapper.get_commit_hash()
+        let commit_hash = self
+            .ci_provider_wrapper
+            .get_commit_hash()
             .context("Failed to get commit hash")?;
 
         // let branch = ciProvider.get_branch().ok_or_else(|| anyhow!("No branch provided"))?;
@@ -252,41 +286,53 @@ impl KnapsackClient {
             anyhow::bail!("Failed to initialize queue: [{status}] [{output}]")
         }
 
-        let response = result.json::<KnapsackResponseWithFiles>().context("Failed to parse response")?;
+        let response = result
+            .json::<KnapsackResponseWithFiles>()
+            .context("Failed to parse response")?;
 
         let mut files = vec![];
 
         for file in response.test_files {
-            files.push(Test::from_knapsack_file(&file.path)
-                .with_context(|| format!("Failed to parse test file: {}", &file.path))?);
+            files.push(
+                Test::from_knapsack_file(&file.path)
+                    .with_context(|| format!("Failed to parse test file: {}", &file.path))?,
+            );
         }
 
         Ok(files)
     }
 
-    pub(crate) fn update_test_results(&self, test_results: &Vec<TestResult>) -> Result<()> {
-        let node_total = self.ci_provider_wrapper
+    pub(crate) fn upload_test_results(&self, test_results: &Vec<TestResult>) -> Result<()> {
+        let node_total = self
+            .ci_provider_wrapper
             .get_ci_node_total()
             .context("Failed to get node total")?;
 
-        let node_index = self.ci_provider_wrapper
+        let node_index = self
+            .ci_provider_wrapper
             .get_ci_node_index()
             .context("Failed to get node index")?;
 
-        let branch = self.ci_provider_wrapper
+        let branch = self
+            .ci_provider_wrapper
             .get_branch()
             .context("Failed to get branch")?;
 
-        let commit_hash = self.ci_provider_wrapper.get_commit_hash()
+        let commit_hash = self
+            .ci_provider_wrapper
+            .get_commit_hash()
             .context("Failed to get commit hash")?;
 
         let tests_value = serde_json::Value::Array(
-            test_results.iter().map(|test| {
-                json!({
-                    "path": test.test.to_knapsack_file(),
-                    "time_execution": test.exec_time
+            test_results
+                .iter()
+                .map(|test| {
+                    json!({
+                        "path": test.test.to_knapsack_file(),
+                        "time_execution": test.exec_time
+                    })
                 })
-            }).collect()
+                .collect(),
         );
 
         // let branch = ciProvider.get_branch().ok_or_else(|| anyhow!("No branch provided"))?;
@@ -296,7 +342,6 @@ impl KnapsackClient {
               "branch": branch,
               "node_total": node_total,
               "node_index": node_index,
-              "node_build_id": self.ci_provider_wrapper.get_ci_node_build_id(),
               "test_files": tests_value
         });
 
@@ -366,18 +411,21 @@ mod tests {
             server.base_url(),
             "test_api_key".to_string(),
             Box::new(TestTestFinder::new()),
-            CiProviderWrapper::new(Box::new(TestProvider::new()))
+            CiProviderWrapper::new(Box::new(TestProvider::new())),
         );
 
         let tests = client.get_tests()?;
 
         mock.assert();
 
-        assert_eq!(tests, vec![Test {
-            package_name: "a".to_string(),
-            binary_name: "b".to_string(),
-            test_name: "c".to_string(),
-        }]);
+        assert_eq!(
+            tests,
+            vec![Test {
+                package_name: "a".to_string(),
+                binary_name: "b".to_string(),
+                test_name: "c".to_string(),
+            }]
+        );
         assert!(client.initialized);
 
         Ok(())
@@ -438,7 +486,7 @@ mod tests {
             server.base_url(),
             "test_api_key".to_string(),
             Box::new(TestTestFinder::new()),
-            CiProviderWrapper::new(Box::new(TestProvider::new()))
+            CiProviderWrapper::new(Box::new(TestProvider::new())),
         );
 
         let tests = client.get_tests()?;
@@ -446,11 +494,14 @@ mod tests {
         mock.assert();
         mock2.assert();
 
-        assert_eq!(tests, vec![Test {
-            package_name: "pn".to_string(),
-            binary_name: "bn".to_string(),
-            test_name: "tn".to_string(),
-        }]);
+        assert_eq!(
+            tests,
+            vec![Test {
+                package_name: "pn".to_string(),
+                binary_name: "bn".to_string(),
+                test_name: "tn".to_string(),
+            }]
+        );
         assert!(client.initialized);
 
         Ok(())
@@ -487,7 +538,7 @@ mod tests {
             server.base_url(),
             "test_api_key".to_string(),
             Box::new(TestTestFinder::new()),
-            CiProviderWrapper::new(Box::new(TestProvider::new()))
+            CiProviderWrapper::new(Box::new(TestProvider::new())),
         );
         client.initialized = true;
 
@@ -495,11 +546,14 @@ mod tests {
 
         mock.assert();
 
-        assert_eq!(tests, vec![Test {
-            package_name: "pn".to_string(),
-            binary_name: "bn".to_string(),
-            test_name: "tn".to_string(),
-        }]);
+        assert_eq!(
+            tests,
+            vec![Test {
+                package_name: "pn".to_string(),
+                binary_name: "bn".to_string(),
+                test_name: "tn".to_string(),
+            }]
+        );
         assert!(client.initialized);
 
         Ok(())
