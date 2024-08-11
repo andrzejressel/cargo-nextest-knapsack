@@ -1,20 +1,17 @@
-use crate::ci_providers::ci_provider_base::CiProvider;
 use crate::ci_providers::ci_provider_wrapper::CiProviderWrapper;
 use crate::models::{Test, TestResult};
-use crate::test_finder::TestFinder;
-use anyhow::{anyhow, Context, Result};
+use crate::test_context::TestContext;
+use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-pub(crate) struct KnapsackClient {
+pub(crate) struct KnapsackClient<'a> {
     initialized: bool,
     endpoint: String,
     api_key: String,
-    test_finder: Box<dyn TestFinder>,
+    test_context: &'a dyn TestContext,
     ci_provider_wrapper: CiProviderWrapper,
 }
-
-impl KnapsackClient {}
 
 #[derive(Deserialize)]
 struct KnapsackResponseWithFiles {
@@ -26,18 +23,18 @@ struct KnapsackTestFile {
     path: String,
 }
 
-impl KnapsackClient {
-    pub(crate) fn new(
+impl KnapsackClient<'_> {
+    pub(crate) fn new<'a>(
         endpoint: String,
         api_key: String,
-        test_finder: Box<dyn TestFinder>,
+        test_context: &'a dyn TestContext,
         ci_provider_wrapper: CiProviderWrapper,
-    ) -> Self {
+    ) -> KnapsackClient<'a> {
         KnapsackClient {
             initialized: false,
             api_key,
             endpoint,
-            test_finder,
+            test_context,
             ci_provider_wrapper,
         }
     }
@@ -154,8 +151,8 @@ impl KnapsackClient {
             .context("Failed to get branch")?;
 
         let tests = self
-            .test_finder
-            .find_tests_in_directory()
+            .test_context
+            .find_tests()
             .context("Failed to find tests")?;
 
         let commit_hash = self
@@ -377,8 +374,8 @@ impl KnapsackClient {
 mod tests {
     use super::*;
     use crate::models::Test;
-    use crate::test_finder::TestFinder;
     use httpmock::prelude::*;
+    use crate::ci_providers::ci_provider_base::CiProvider;
 
     #[test]
     fn should_initialize_queue() -> Result<()> {
@@ -407,10 +404,12 @@ mod tests {
             }));
         });
 
+        let finder = TestTestFinder::new();
+
         let mut client = KnapsackClient::new(
             server.base_url(),
             "test_api_key".to_string(),
-            Box::new(TestTestFinder::new()),
+            &finder,
             CiProviderWrapper::new(Box::new(TestProvider::new())),
         );
 
@@ -482,10 +481,12 @@ mod tests {
             }));
         });
 
+        let finder = TestTestFinder::new();
+
         let mut client = KnapsackClient::new(
             server.base_url(),
             "test_api_key".to_string(),
-            Box::new(TestTestFinder::new()),
+            &finder,
             CiProviderWrapper::new(Box::new(TestProvider::new())),
         );
 
@@ -534,10 +535,12 @@ mod tests {
             }));
         });
 
+        let finder = TestTestFinder::new();
+
         let mut client = KnapsackClient::new(
             server.base_url(),
             "test_api_key".to_string(),
-            Box::new(TestTestFinder::new()),
+            &finder,
             CiProviderWrapper::new(Box::new(TestProvider::new())),
         );
         client.initialized = true;
@@ -602,13 +605,17 @@ mod tests {
         }
     }
 
-    impl TestFinder for TestTestFinder {
-        fn find_tests_in_directory(&self) -> Result<Vec<Test>> {
+    impl TestContext for TestTestFinder {
+        fn find_tests(&self) -> Result<Vec<Test>> {
             Ok(vec![Test {
                 package_name: "pn".to_string(),
                 binary_name: "bn".to_string(),
                 test_name: "tn".to_string(),
             }])
+        }
+
+        fn run_tests(&self, _tests: &Vec<Test>) -> Result<Vec<TestResult>> {
+            todo!()
         }
     }
 }
