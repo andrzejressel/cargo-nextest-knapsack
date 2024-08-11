@@ -101,7 +101,7 @@ impl TestContext for DefaultTestContext {
                     .with_context(|| format!("Unknown test: {}", name))?;
 
                 test_results.push(TestResult {
-                    test: test.clone().clone(),
+                    test: (*test).clone(),
                     exec_time,
                 });
             }

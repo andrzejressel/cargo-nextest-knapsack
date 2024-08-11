@@ -614,7 +614,7 @@ mod tests {
             }])
         }
 
-        fn run_tests(&self, tests: &Vec<Test>) -> Result<Vec<TestResult>> {
+        fn run_tests(&self, _tests: &Vec<Test>) -> Result<Vec<TestResult>> {
             todo!()
         }
     }

@@ -3,7 +3,6 @@ use crate::ci_providers::github_actions::GithubActionsCiProvider;
 use crate::knapsack_client::KnapsackClient;
 use crate::test_context::{DefaultTestContext, TestContext};
 use anyhow::Context;
-use std::io::Write;
 use std::path::Path;
 
 mod ci_providers;
