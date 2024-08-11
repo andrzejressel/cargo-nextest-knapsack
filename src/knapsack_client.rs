@@ -1,4 +1,3 @@
-use crate::ci_providers::ci_provider_base::CiProvider;
 use crate::ci_providers::ci_provider_wrapper::CiProviderWrapper;
 use crate::models::{Test, TestResult};
 use crate::test_context::TestContext;
@@ -376,6 +375,7 @@ mod tests {
     use super::*;
     use crate::models::Test;
     use httpmock::prelude::*;
+    use crate::ci_providers::ci_provider_base::CiProvider;
 
     #[test]
     fn should_initialize_queue() -> Result<()> {
