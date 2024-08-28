@@ -896,7 +896,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.4.10",
+ "socket2 0.5.7",
  "tokio",
  "tower-service",
  "tracing",
@@ -1203,9 +1203,9 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "nextest-metadata"
-version = "0.11.3"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26b0b3ef3960350f3e6d6d7cb5e2df561f9daf8e0c834d0068bea1e7fd5a0ad0"
+checksum = "a6bab5a311b4fc81052dde747edf4f9526bc7d2f2eda97e2dd3a99c09c3cb0d0"
 dependencies = [
  "camino",
  "nextest-workspace-hack",
