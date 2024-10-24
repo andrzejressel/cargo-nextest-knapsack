@@ -382,7 +382,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-nextest-knapsack"
-version = "0.0.0-DEV"
+version = "0.0.0-NIGHTLY-644544b"
 dependencies = [
  "anyhow",
  "httpmock",
