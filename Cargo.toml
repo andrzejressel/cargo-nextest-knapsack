@@ -1,6 +1,6 @@
 [package]
 name = "cargo-nextest-knapsack"
-version = "0.0.0-DEV"
+version = "0.0.0-NIGHTLY-7fdd8cc"
 edition = "2021"
 repository = "https://github.com/andrzejressel/cargo-nextest-knapsack"
 
